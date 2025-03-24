@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Сервис для вашего Streamlit приложения
+  app:
+    build: .
+    container_name: streamlit-llm-chat
+    ports:
+      - "8501:8501"  # Прокидываем порт для доступа к Streamlit
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+
+  # Сервис для PostgreSQL
+  db:
+    image: postgres:13  # Используем официальный образ PostgreSQL
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    container_name: postgres-db
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"  # Прокидываем порт PostgreSQL
+    volumes:
+      - ./data:/var/lib/postgresql/data  # Данные сохраняются между перезапусками
+
+volumes:
+  postgres_data:
+    driver: local  # Сохраняем данные PostgreSQL между перезапусками
